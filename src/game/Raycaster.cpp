@@ -2,6 +2,7 @@
 
 #include "Map.hpp"
 #include "Player.hpp"
+#include "Tile.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -119,8 +120,19 @@ namespace escape::game {
             draw_start = std::max(draw_start, 0);
             draw_end = std::min(draw_end, screen_height_ - 1);
 
-            const auto color = pick_wall_color(hit.cell_value, hit.side);
-            window.draw_vertical_strip(x, draw_start, draw_end, color);
+            if (!map.in_bounds(hit.map_x, hit.map_y)) {
+                const auto fallback = pick_wall_color(hit.cell_value, hit.side);
+                window.draw_vertical_strip(x, draw_start, draw_end, fallback);
+                continue;
+            }
+
+            const auto& tile = map.tile_at(hit.map_x, hit.map_y);
+            for (int y = draw_start; y <= draw_end; ++y) {
+                const float wall_v = static_cast<float>(y - (-line_height / 2 + screen_height_ / 2))
+                                     / static_cast<float>(std::max(line_height, 1));
+                const auto color = tile.sample(hit.wall_x, wall_v, hit.side);
+                window.draw_pixel(x, y, color);
+            }
         }
     }
 

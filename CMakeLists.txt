@@ -74,6 +74,11 @@ target_sources(${MAIN_EXECUTABLE_NAME}
         src/game/Map.cpp
         src/game/Player.cpp
         src/game/Raycaster.cpp
+        src/game/Texture.cpp
+        src/game/Tile.cpp
+        src/game/EmptyTile.cpp
+        src/game/SolidWallTile.cpp
+        src/game/TexturedWallTile.cpp
 )
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )
