@@ -142,6 +142,18 @@ target_sources(${MAIN_EXECUTABLE_NAME}
         src/game/ThinWallTile.cpp
         src/patterns/TileFactory.cpp
         src/patterns/WallShadingStrategy.cpp
+        src/burgundy/Item.cpp
+        src/burgundy/Inventory.cpp
+        src/burgundy/Puzzle.cpp
+        src/burgundy/KeypadPuzzle.cpp
+        src/burgundy/CombinationPuzzle.cpp
+        src/burgundy/ExaminePuzzle.cpp
+        src/burgundy/Interactable.cpp
+        src/burgundy/PickupInteractable.cpp
+        src/burgundy/PuzzleInteractable.cpp
+        src/burgundy/ExitInteractable.cpp
+        src/burgundy/GameDirector.cpp
+        src/burgundy/SceneLoader.cpp
 )
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )
