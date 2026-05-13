@@ -123,6 +123,7 @@ target_sources(${MAIN_EXECUTABLE_NAME}
         src/app/GameEngine.cpp
         src/app/Window.cpp
         src/app/Framebuffer.cpp
+        src/app/ImGuiOverlay.cpp
         src/game/Vector2.cpp
         src/game/Size2D.cpp
         src/game/RenderStyle.cpp

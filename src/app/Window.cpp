@@ -57,6 +57,9 @@ namespace escape::app {
         SDL_Event event {};
 
         while (SDL_PollEvent(&event)) {
+            if (event_callback_ != nullptr) {
+                event_callback_(event_user_data_, event);
+            }
             switch (event.type) {
             case SDL_EVENT_QUIT:
                 is_open_ = false;
@@ -70,6 +73,11 @@ namespace escape::app {
                 break;
             }
         }
+    }
+
+    void Window::set_event_callback(EventCallback callback, void* user_data) noexcept {
+        event_callback_ = callback;
+        event_user_data_ = user_data;
     }
 
     void Window::clear(Color color) {
@@ -109,6 +117,11 @@ namespace escape::app {
     }
 
     void Window::present_framebuffer(const Framebuffer& framebuffer) {
+        blit_framebuffer(framebuffer);
+        swap();
+    }
+
+    void Window::blit_framebuffer(const Framebuffer& framebuffer) {
         if (framebuffer_texture_ == nullptr
             || framebuffer_texture_width_ != framebuffer.width()
             || framebuffer_texture_height_ != framebuffer.height()) {
@@ -128,6 +141,9 @@ namespace escape::app {
             "Failed to upload framebuffer pixels");
         ensure(SDL_RenderTexture(renderer_.get(), framebuffer_texture_.get(), nullptr, nullptr),
             "Failed to render framebuffer texture");
+    }
+
+    void Window::swap() {
         ensure(SDL_RenderPresent(renderer_.get()), "Failed to present renderer");
     }
 
