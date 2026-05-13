@@ -1,24 +1,47 @@
 # escape
 
-Escape este un proiect C++ construit cu CMake, gandit ca baza pentru un motor de joc modern si usor de extins.
-Aplicatia foloseste SDL3 pentru fereastra si randare, iar arhitectura interna se bazeaza pe un ECS simplu pentru gestionarea entitatilor si componentelor.
-In acest moment proiectul include o demonstratie grafica de baza: un dreptunghi afisat in fereastra care poate fi mutat pe ecran cu tastele WASD.
+Escape este un proiect C++ construit cu CMake care implementeaza un raycaster software in stil Wolfenstein 3D peste SDL3.
+Codul urmareste in totalitate tutorialul lui Lode Vandevenne (partea 1, partea 2 si partea 3) si include rendering de pereti texturati, podea/tavan procedurale, sprites cu depth buffer, usi glisante si pereti subtiri.
 
 ## Cerinte OOP
 
-- Sunt definite clasele `Vector2`, `Size2D`, `RenderStyle` si `PlayerRectangle`, iar `PlayerRectangle` foloseste compunere cu celelalte clase.
-- Toate aceste clase au constructori cu parametri.
-- Clasa `PlayerRectangle` are constructor de copiere, operator de atribuire prin copiere si destructor.
-- Exista `operator<<` pentru clasele de model si pentru clasele principale din aplicatie (`WindowConfig`, `Color`, `Rectangle`, `Window`, `GameEngine`).
-- Exista functii publice netriviale precum `Vector2::translated`, `Vector2::scaled`, `PlayerRectangle::move_with_direction`, `PlayerRectangle::clamp_to_bounds` si `PlayerRectangle::to_window_rectangle`.
-- In `main` exista un scenariu de utilizare care construieste obiecte, afiseaza stari, foloseste ECS-ul si apeleaza functiile publice ale claselor de model definite pentru tema.
-- Exemplele de intrare de la tastatura sunt in `tastatura.txt`.
-- Exista configurare CI in `.github/workflows/`.
-- Exista configurare `.gitattributes` pentru a evidentia codul C++.
+### Tema 0
+- Numele proiectului este `escape`, un raycaster software cu SDL3 pentru fereastra si randare.
+- Tema isi propune sa imbine ECS-ul existent cu un motor de raycaster modular care expune pereti, sprite, usi, ceturi si pattern-uri de design pentru extindere.
+
+### Tema 1 (`v0.1`)
+- Clasele `Vector2`, `Size2D`, `RenderStyle`, `Map`, `Player` si `Raycaster` folosesc compunere si au constructori cu parametri.
+- `Player` are constructor de copiere, `operator=` de copiere si destructor explicit.
+- `operator<<` pentru toate clasele afiseaza starea folosind compunere de apeluri.
+- Functii publice netriviale: `Vector2::translated`, `Vector2::scaled`, `Player::try_move_forward/strafe/rotate`, `Map::is_solid_at`, `Map::load_from_file`, `Raycaster::cast_ray`, `Raycaster::render`.
+- Scenariul din `main` construieste vectorii, harta, jucatorul si raycaster-ul, apoi porneste game loop-ul cu fereastra SDL3.
+
+### Tema 2 (`v0.2`)
+- Separare `.hpp`/`.cpp` pentru toate clasele.
+- Ierarhie `Tile` cu derivatele `EmptyTile`, `SolidWallTile`, `TexturedWallTile` si (commit final) `EmissiveWallTile`.
+- Functii virtuale specifice (`sample`, `is_passable`, `base_color`), constructor virtual `clone`, afisare via NVI (`do_print`).
+- `Map` retine `std::vector<std::unique_ptr<Tile>>` si implementeaza copy ctor cu clonare deep, plus copy-and-swap `operator=`.
+- `Map::textured_tile_count` foloseste `dynamic_cast` pentru downcast cu sens.
+- Ierarhie de exceptii (`EscapeError`, `MapLoadError`, `TextureLoadError`, `OutOfBoundsError`, `InvalidConfigError`) folosita din constructori, prinsa in `main`.
+- Membri statici in `Texture` (`invalid_count_`, `invalid_texture_count`).
+- STL peste tot (`std::vector`, `std::unique_ptr`, `std::shared_ptr`, `std::unordered_map`, lambdas).
+- Commit separat pentru a patra derivata (`EmissiveWallTile`), integrata via `Map::demo_tile_for_cell`.
+
+### Tema 3 (`v0.3`)
+- Pattern-uri de design: **Factory** in `patterns::TileFactory` si **Strategy** in `patterns::WallShadingStrategy` (cu derivatele `NoShading`, `LinearDistanceShading`, `FogShading`).
+- Clasa template `templates::Bounded<T>` cu doua instantieri folosite in `GameEngine`: `Bounded<float>` pentru `fps_target_` si `Bounded<int>` pentru `player_inventory_`.
+- Functie template `templates::clamp_into<T>` cu doua instantieri (`<float>`, `<int>`).
+- `Raycaster` part 3: usi glisante (`DoorTile` cu `toggle`/`advance`) si pereti subtiri transparenti (`ThinWallTile`).
+
+## Controale
+
+- WASD: deplasare/strafe
+- Sageti stanga/dreapta: rotire
+- Space: deschide/inchide usile din fata
 
 ## Observatii
 
-- Tag-ul local recomandat pentru aceasta etapa este `v0.1`.
+- Tag-uri Git: `v0.1`, `v0.2`, `v0.3`.
 - Cerinta de code review pentru alte 2 proiecte ramane o activitate externa fata de codul din acest repository si trebuie facuta separat.
 
 ---
