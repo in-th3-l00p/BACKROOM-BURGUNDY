@@ -46,6 +46,18 @@ include(cmake/CopyHelper.cmake)
 
 # find_package(Threads REQUIRED)
 
+execute_process(
+    COMMAND brew --prefix sdl3
+    OUTPUT_VARIABLE SDL3_BREW_PREFIX
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(SDL3_BREW_PREFIX)
+    list(PREPEND CMAKE_PREFIX_PATH "${SDL3_BREW_PREFIX}")
+endif()
+
+find_package(SDL3 CONFIG REQUIRED)
+
 ###############################################################################
 
 # NOTE: update executable name in .github/workflows/cmake.yml:25 when changing name here
@@ -54,7 +66,12 @@ add_executable(${MAIN_EXECUTABLE_NAME}
 )
 target_sources(${MAIN_EXECUTABLE_NAME}
     PRIVATE
-        src/Example.cpp
+        src/app/GameEngine.cpp
+        src/app/Window.cpp
+        src/game/Vector2.cpp
+        src/game/Size2D.cpp
+        src/game/RenderStyle.cpp
+        src/game/PlayerRectangle.cpp
 )
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )
@@ -70,12 +87,15 @@ set_compiler_flags(RUN_SANITIZERS ${USE_ASAN} TARGET_NAMES ${MAIN_EXECUTABLE_NAM
 target_include_directories(${MAIN_EXECUTABLE_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 )
+target_include_directories(${MAIN_EXECUTABLE_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
 target_include_directories(${MAIN_EXECUTABLE_NAME} SYSTEM PRIVATE
     ext
 )
 # target_include_directories(${MAIN_EXECUTABLE_NAME} SYSTEM PRIVATE ${<SomeLib>_SOURCE_DIR}/include)
 # target_link_directories(${MAIN_EXECUTABLE_NAME} PRIVATE ${<SomeLib>_BINARY_DIR}/lib)
-# target_link_libraries(${MAIN_EXECUTABLE_NAME} <SomeLib>)
+target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE SDL3::SDL3)
 
 ###############################################################################
 
