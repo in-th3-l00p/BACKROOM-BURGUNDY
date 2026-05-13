@@ -23,6 +23,7 @@
 
 #include "ecs/Registry.hpp"
 
+#include <cstdlib>
 #include <exception>
 #include <iostream>
 #include <memory>
@@ -183,6 +184,11 @@ int main() {
         registry.remove<escape::game::Player>(entity);
         registry.destroy_entity(entity);
         registry.clear();
+
+        if (const char* headless = std::getenv("ESCAPE_HEADLESS"); headless != nullptr && headless[0] != '\0') {
+            std::cout << "headless mode requested, skipping window/engine loop\n";
+            return 0;
+        }
 
         auto engine = escape::app::GameEngine {escape::app::WindowConfig {"escape engine", 1280, 720}};
         std::cout << engine << '\n';

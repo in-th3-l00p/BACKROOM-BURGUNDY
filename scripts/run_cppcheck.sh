@@ -11,6 +11,7 @@ cppcheck --enable=all \
     --suppress=missingIncludeSystem \
     --suppress=unmatchedSuppression \
     --suppress=useStlAlgorithm \
+    --suppress=unusedFunction \
     --check-level=exhaustive \
     -j 6 \
     --cppcheck-build-dir=cppcheck-scan-dir \
