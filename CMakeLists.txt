@@ -56,7 +56,26 @@ if(SDL3_BREW_PREFIX)
     list(PREPEND CMAKE_PREFIX_PATH "${SDL3_BREW_PREFIX}")
 endif()
 
-find_package(SDL3 CONFIG REQUIRED)
+find_package(SDL3 CONFIG QUIET)
+if(NOT SDL3_FOUND)
+    message(STATUS "SDL3 not found via find_package, fetching it from source")
+    include(FetchContent)
+    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    set(SDL_STATIC ON CACHE BOOL "" FORCE)
+    set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+    set(SDL_TESTS OFF CACHE BOOL "" FORCE)
+    set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(SDL_INSTALL_TESTS OFF CACHE BOOL "" FORCE)
+    set(SDL_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
+    FetchContent_Declare(
+        SDL3
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+        GIT_TAG release-3.2.22
+        GIT_SHALLOW 1
+        GIT_PROGRESS ON
+    )
+    FetchContent_MakeAvailable(SDL3)
+endif()
 
 ###############################################################################
 
@@ -111,6 +130,14 @@ target_include_directories(${MAIN_EXECUTABLE_NAME} SYSTEM PRIVATE
 # target_include_directories(${MAIN_EXECUTABLE_NAME} SYSTEM PRIVATE ${<SomeLib>_SOURCE_DIR}/include)
 # target_link_directories(${MAIN_EXECUTABLE_NAME} PRIVATE ${<SomeLib>_BINARY_DIR}/lib)
 target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE SDL3::SDL3)
+
+# treat SDL3 headers as system to keep -Werror clean
+if(TARGET SDL3::SDL3)
+    get_target_property(_sdl3_inc SDL3::SDL3 INTERFACE_INCLUDE_DIRECTORIES)
+    if(_sdl3_inc)
+        target_include_directories(${MAIN_EXECUTABLE_NAME} SYSTEM PRIVATE ${_sdl3_inc})
+    endif()
+endif()
 
 ###############################################################################
 
