@@ -10,6 +10,61 @@
 #include <ostream>
 
 namespace escape::game {
+    namespace {
+        struct DdaState {
+            float ray_dir_x;
+            float ray_dir_y;
+            int map_x;
+            int map_y;
+            int step_x;
+            int step_y;
+            float delta_dist_x;
+            float delta_dist_y;
+            float side_dist_x;
+            float side_dist_y;
+        };
+
+        auto make_dda_state(int column, int screen_width, const Player& player) -> DdaState {
+            const auto camera_x = 2.0F * static_cast<float>(column) / static_cast<float>(screen_width) - 1.0F;
+            const auto ray_dir_x = player.direction().x() + player.camera_plane().x() * camera_x;
+            const auto ray_dir_y = player.direction().y() + player.camera_plane().y() * camera_x;
+
+            int map_x = static_cast<int>(player.position().x());
+            int map_y = static_cast<int>(player.position().y());
+
+            const auto delta_dist_x = (ray_dir_x == 0.0F) ? 1e30F : std::fabs(1.0F / ray_dir_x);
+            const auto delta_dist_y = (ray_dir_y == 0.0F) ? 1e30F : std::fabs(1.0F / ray_dir_y);
+
+            int step_x = 0;
+            int step_y = 0;
+            float side_dist_x = 0.0F;
+            float side_dist_y = 0.0F;
+
+            if (ray_dir_x < 0.0F) {
+                step_x = -1;
+                side_dist_x = (player.position().x() - static_cast<float>(map_x)) * delta_dist_x;
+            } else {
+                step_x = 1;
+                side_dist_x = (static_cast<float>(map_x) + 1.0F - player.position().x()) * delta_dist_x;
+            }
+            if (ray_dir_y < 0.0F) {
+                step_y = -1;
+                side_dist_y = (player.position().y() - static_cast<float>(map_y)) * delta_dist_y;
+            } else {
+                step_y = 1;
+                side_dist_y = (static_cast<float>(map_y) + 1.0F - player.position().y()) * delta_dist_y;
+            }
+
+            return DdaState {
+                ray_dir_x, ray_dir_y,
+                map_x, map_y,
+                step_x, step_y,
+                delta_dist_x, delta_dist_y,
+                side_dist_x, side_dist_y,
+            };
+        }
+    }
+
     Raycaster::Raycaster(int screen_width, int screen_height)
         : screen_width_(screen_width),
           screen_height_(screen_height),
@@ -31,73 +86,95 @@ namespace escape::game {
     }
 
     auto Raycaster::cast_ray(int column, const Player& player, const Map& map) const -> RayHit {
-        const auto camera_x = 2.0F * static_cast<float>(column) / static_cast<float>(screen_width_) - 1.0F;
-        const auto ray_dir_x = player.direction().x() + player.camera_plane().x() * camera_x;
-        const auto ray_dir_y = player.direction().y() + player.camera_plane().y() * camera_x;
-
-        int map_x = static_cast<int>(player.position().x());
-        int map_y = static_cast<int>(player.position().y());
-
-        const auto delta_dist_x = (ray_dir_x == 0.0F) ? 1e30F : std::fabs(1.0F / ray_dir_x);
-        const auto delta_dist_y = (ray_dir_y == 0.0F) ? 1e30F : std::fabs(1.0F / ray_dir_y);
-
-        int step_x = 0;
-        int step_y = 0;
-        float side_dist_x = 0.0F;
-        float side_dist_y = 0.0F;
-
-        if (ray_dir_x < 0.0F) {
-            step_x = -1;
-            side_dist_x = (player.position().x() - static_cast<float>(map_x)) * delta_dist_x;
-        } else {
-            step_x = 1;
-            side_dist_x = (static_cast<float>(map_x) + 1.0F - player.position().x()) * delta_dist_x;
-        }
-        if (ray_dir_y < 0.0F) {
-            step_y = -1;
-            side_dist_y = (player.position().y() - static_cast<float>(map_y)) * delta_dist_y;
-        } else {
-            step_y = 1;
-            side_dist_y = (static_cast<float>(map_y) + 1.0F - player.position().y()) * delta_dist_y;
-        }
+        auto state = make_dda_state(column, screen_width_, player);
 
         int side = 0;
         int cell_value = 0;
         for (int safety = 0; safety < 1024; ++safety) {
-            if (side_dist_x < side_dist_y) {
-                side_dist_x += delta_dist_x;
-                map_x += step_x;
+            if (state.side_dist_x < state.side_dist_y) {
+                state.side_dist_x += state.delta_dist_x;
+                state.map_x += state.step_x;
                 side = 0;
             } else {
-                side_dist_y += delta_dist_y;
-                map_y += step_y;
+                state.side_dist_y += state.delta_dist_y;
+                state.map_y += state.step_y;
                 side = 1;
             }
-            cell_value = map.cell_at(map_x, map_y);
+            cell_value = map.cell_at(state.map_x, state.map_y);
             if (cell_value > 0) {
                 break;
             }
         }
 
         const float perp_distance = (side == 0)
-            ? (side_dist_x - delta_dist_x)
-            : (side_dist_y - delta_dist_y);
+            ? (state.side_dist_x - state.delta_dist_x)
+            : (state.side_dist_y - state.delta_dist_y);
 
         float wall_x = (side == 0)
-            ? (player.position().y() + perp_distance * ray_dir_y)
-            : (player.position().x() + perp_distance * ray_dir_x);
+            ? (player.position().y() + perp_distance * state.ray_dir_y)
+            : (player.position().x() + perp_distance * state.ray_dir_x);
         wall_x -= std::floor(wall_x);
 
         return RayHit {
             perp_distance,
-            map_x,
-            map_y,
+            state.map_x,
+            state.map_y,
             side,
             cell_value,
             wall_x,
-            ray_dir_x,
-            ray_dir_y,
+            state.ray_dir_x,
+            state.ray_dir_y,
         };
+    }
+
+    auto Raycaster::cast_ray_multi(int column, const Player& player, const Map& map) const -> std::vector<RayHit> {
+        auto state = make_dda_state(column, screen_width_, player);
+        auto hits = std::vector<RayHit> {};
+        hits.reserve(4);
+
+        int side = 0;
+        for (int safety = 0; safety < 1024; ++safety) {
+            if (state.side_dist_x < state.side_dist_y) {
+                state.side_dist_x += state.delta_dist_x;
+                state.map_x += state.step_x;
+                side = 0;
+            } else {
+                state.side_dist_y += state.delta_dist_y;
+                state.map_y += state.step_y;
+                side = 1;
+            }
+
+            const int cell_value = map.cell_at(state.map_x, state.map_y);
+            if (cell_value <= 0) {
+                continue;
+            }
+
+            const float perp_distance = (side == 0)
+                ? (state.side_dist_x - state.delta_dist_x)
+                : (state.side_dist_y - state.delta_dist_y);
+            float wall_x = (side == 0)
+                ? (player.position().y() + perp_distance * state.ray_dir_y)
+                : (player.position().x() + perp_distance * state.ray_dir_x);
+            wall_x -= std::floor(wall_x);
+
+            hits.push_back(RayHit {
+                perp_distance,
+                state.map_x,
+                state.map_y,
+                side,
+                cell_value,
+                wall_x,
+                state.ray_dir_x,
+                state.ray_dir_y,
+            });
+
+            const bool out_of_bounds = !map.in_bounds(state.map_x, state.map_y);
+            if (out_of_bounds || !map.tile_at(state.map_x, state.map_y).passes_ray_through()) {
+                break;
+            }
+        }
+
+        return hits;
     }
 
     void Raycaster::render_floor_and_ceiling(const Player& player, app::Framebuffer& framebuffer) {
@@ -154,29 +231,35 @@ namespace escape::game {
 
     void Raycaster::render_walls(const Player& player, const Map& map, app::Framebuffer& framebuffer) {
         for (int x = 0; x < screen_width_; ++x) {
-            const auto hit = cast_ray(x, player, map);
-            const float safe_distance = std::max(hit.perp_distance, 0.0001F);
-            depth_buffer_[static_cast<std::size_t>(x)] = safe_distance;
-
-            const int line_height = static_cast<int>(static_cast<float>(screen_height_) / safe_distance);
-            const int unclipped_top = -line_height / 2 + screen_height_ / 2;
-            int draw_start = unclipped_top;
-            int draw_end = line_height / 2 + screen_height_ / 2;
-            draw_start = std::max(draw_start, 0);
-            draw_end = std::min(draw_end, screen_height_ - 1);
-
-            if (!map.in_bounds(hit.map_x, hit.map_y)) {
+            const auto hits = cast_ray_multi(x, player, map);
+            if (hits.empty()) {
+                depth_buffer_[static_cast<std::size_t>(x)] = 1e30F;
                 continue;
             }
-            const auto& tile = map.tile_at(hit.map_x, hit.map_y);
-            for (int y = draw_start; y <= draw_end; ++y) {
-                const float wall_v = static_cast<float>(y - unclipped_top)
-                                   / static_cast<float>(std::max(line_height, 1));
-                const auto base = tile.sample(hit.wall_x, wall_v, hit.side);
-                if (base.a == 0) {
+
+            depth_buffer_[static_cast<std::size_t>(x)] = std::max(hits.back().perp_distance, 0.0001F);
+
+            for (auto iterator = hits.rbegin(); iterator != hits.rend(); ++iterator) {
+                const auto& hit = *iterator;
+                const float safe_distance = std::max(hit.perp_distance, 0.0001F);
+                const int line_height = static_cast<int>(static_cast<float>(screen_height_) / safe_distance);
+                const int unclipped_top = -line_height / 2 + screen_height_ / 2;
+                int draw_start = std::max(unclipped_top, 0);
+                int draw_end = std::min(line_height / 2 + screen_height_ / 2, screen_height_ - 1);
+
+                if (!map.in_bounds(hit.map_x, hit.map_y)) {
                     continue;
                 }
-                framebuffer.set_pixel(x, y, shading_->apply(base, safe_distance));
+                const auto& tile = map.tile_at(hit.map_x, hit.map_y);
+                for (int y = draw_start; y <= draw_end; ++y) {
+                    const float wall_v = static_cast<float>(y - unclipped_top)
+                                       / static_cast<float>(std::max(line_height, 1));
+                    const auto base = tile.sample(hit.wall_x, wall_v, hit.side);
+                    if (base.a == 0) {
+                        continue;
+                    }
+                    framebuffer.set_pixel(x, y, shading_->apply(base, safe_distance));
+                }
             }
         }
     }
