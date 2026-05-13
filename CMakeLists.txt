@@ -80,6 +80,8 @@ target_sources(${MAIN_EXECUTABLE_NAME}
         src/game/EmptyTile.cpp
         src/game/SolidWallTile.cpp
         src/game/TexturedWallTile.cpp
+        src/game/Sprite.cpp
+        src/game/SpriteRenderer.cpp
 )
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )

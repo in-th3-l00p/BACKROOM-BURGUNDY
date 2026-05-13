@@ -4,8 +4,12 @@
 #include "../game/Map.hpp"
 #include "../game/Player.hpp"
 #include "../game/Raycaster.hpp"
+#include "../game/Sprite.hpp"
+#include "../game/SpriteRenderer.hpp"
 #include "Framebuffer.hpp"
 #include "Window.hpp"
+
+#include <vector>
 
 #include <iosfwd>
 
@@ -39,6 +43,8 @@ namespace escape::app {
         game::Map map_;
         game::Player player_;
         game::Raycaster raycaster_;
+        game::SpriteRenderer sprite_renderer_;
+        std::vector<game::Sprite> sprites_ {};
     };
 
     auto operator<<(std::ostream& stream, const GameEngine& game_engine) -> std::ostream&;

@@ -25,7 +25,8 @@ namespace escape::app {
                   game::Vector2 {0.0F, 0.66F},
                   default_move_speed,
                   default_rotation_speed),
-          raycaster_(internal_resolution_width, internal_resolution_height) {
+          raycaster_(internal_resolution_width, internal_resolution_height),
+          sprite_renderer_(internal_resolution_width, internal_resolution_height) {
         raycaster_.set_floor_texture(std::make_shared<game::Texture>(
             game::Texture::make_checker(64, 64,
                 Color {.r = 120, .g = 120, .b = 120, .a = 255},
@@ -35,6 +36,21 @@ namespace escape::app {
             game::Texture::make_gradient(64, 64,
                 Color {.r = 20, .g = 20, .b = 40, .a = 255},
                 Color {.r = 60, .g = 60, .b = 90, .a = 255})));
+
+        auto pillar_texture = std::make_shared<game::Texture>(
+            game::Texture::make_gradient(32, 64,
+                Color {.r = 240, .g = 180, .b = 60, .a = 255},
+                Color {.r = 200, .g = 100, .b = 30, .a = 255}));
+        auto orb_texture = std::make_shared<game::Texture>(
+            game::Texture::make_checker(32, 32,
+                Color {.r = 90,  .g = 240, .b = 200, .a = 255},
+                Color {.r = 20,  .g = 80,  .b = 90,  .a = 255},
+                4));
+
+        sprites_.emplace_back("pillar_a", game::Vector2 {15.5F, 11.5F}, pillar_texture, 1.0F);
+        sprites_.emplace_back("pillar_b", game::Vector2 {18.5F, 4.5F},  pillar_texture, 1.0F);
+        sprites_.emplace_back("orb_a",    game::Vector2 {10.0F, 15.0F}, orb_texture,   0.5F);
+        sprites_.emplace_back("orb_b",    game::Vector2 {14.5F, 20.5F}, orb_texture,   0.5F);
     }
 
     void GameEngine::run() {
@@ -78,6 +94,14 @@ namespace escape::app {
 
     void GameEngine::render() {
         raycaster_.render(player_, map_, framebuffer_);
+
+        auto sprite_pointers = std::vector<const game::Sprite*> {};
+        sprite_pointers.reserve(sprites_.size());
+        for (const auto& sprite : sprites_) {
+            sprite_pointers.push_back(&sprite);
+        }
+        sprite_renderer_.render(player_, sprite_pointers, raycaster_, framebuffer_);
+
         window_.present_framebuffer(framebuffer_);
     }
 
