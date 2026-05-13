@@ -1,6 +1,9 @@
 #pragma once
 
 #include "../ecs/Registry.hpp"
+#include "../game/Map.hpp"
+#include "../game/Player.hpp"
+#include "../game/Raycaster.hpp"
 #include "Window.hpp"
 
 #include <iosfwd>
@@ -18,24 +21,22 @@ namespace escape::app {
 
         void run();
 
-        auto registry() noexcept -> ecs::Registry& {
-            return registry_;
-        }
-
-        auto registry() const noexcept -> const ecs::Registry& {
-            return registry_;
-        }
+        auto registry() noexcept -> ecs::Registry& { return registry_; }
+        auto registry() const noexcept -> const ecs::Registry& { return registry_; }
+        auto map() const noexcept -> const game::Map& { return map_; }
+        auto player() const noexcept -> const game::Player& { return player_; }
 
     private:
         friend auto operator<<(std::ostream& stream, const GameEngine& game_engine) -> std::ostream&;
 
-        void bootstrap_demo_scene();
         void handle_input(float delta_time_seconds);
-        void update(float delta_time_seconds);
         void render();
 
         Window window_;
         ecs::Registry registry_ {};
+        game::Map map_;
+        game::Player player_;
+        game::Raycaster raycaster_;
     };
 
     auto operator<<(std::ostream& stream, const GameEngine& game_engine) -> std::ostream&;

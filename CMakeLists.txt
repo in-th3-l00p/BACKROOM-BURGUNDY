@@ -71,7 +71,9 @@ target_sources(${MAIN_EXECUTABLE_NAME}
         src/game/Vector2.cpp
         src/game/Size2D.cpp
         src/game/RenderStyle.cpp
-        src/game/PlayerRectangle.cpp
+        src/game/Map.cpp
+        src/game/Player.cpp
+        src/game/Raycaster.cpp
 )
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )
