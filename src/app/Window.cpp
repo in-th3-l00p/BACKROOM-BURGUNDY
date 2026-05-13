@@ -84,6 +84,24 @@ namespace escape::app {
         ensure(SDL_RenderFillRect(renderer_.get(), &sdl_rectangle), "Failed to draw filled rectangle");
     }
 
+    void Window::draw_vertical_strip(int column, int top_y, int bottom_y, Color color) {
+        ensure(SDL_SetRenderDrawColor(renderer_.get(), color.r, color.g, color.b, color.a),
+            "Failed to set renderer draw color");
+        ensure(SDL_RenderLine(renderer_.get(),
+                   static_cast<float>(column),
+                   static_cast<float>(top_y),
+                   static_cast<float>(column),
+                   static_cast<float>(bottom_y)),
+            "Failed to draw vertical strip");
+    }
+
+    void Window::draw_pixel(int x, int y, Color color) {
+        ensure(SDL_SetRenderDrawColor(renderer_.get(), color.r, color.g, color.b, color.a),
+            "Failed to set renderer draw color");
+        ensure(SDL_RenderPoint(renderer_.get(), static_cast<float>(x), static_cast<float>(y)),
+            "Failed to draw pixel");
+    }
+
     void Window::present() {
         ensure(SDL_RenderPresent(renderer_.get()), "Failed to present renderer");
     }

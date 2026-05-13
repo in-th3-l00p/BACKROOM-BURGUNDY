@@ -41,6 +41,8 @@ namespace escape::app {
         void process_events();
         void clear(Color color);
         void draw_filled_rect(Rectangle rectangle, Color color);
+        void draw_vertical_strip(int column, int top_y, int bottom_y, Color color);
+        void draw_pixel(int x, int y, Color color);
         void present();
 
         auto is_open() const noexcept -> bool {
