@@ -1,6 +1,8 @@
 #include "app/Framebuffer.hpp"
 #include "app/GameEngine.hpp"
 #include "errors/Exceptions.hpp"
+#include "game/DoorTile.hpp"
+#include "game/EmissiveWallTile.hpp"
 #include "game/EmptyTile.hpp"
 #include "game/Map.hpp"
 #include "game/Player.hpp"
@@ -12,8 +14,12 @@
 #include "game/SpriteRenderer.hpp"
 #include "game/Texture.hpp"
 #include "game/TexturedWallTile.hpp"
+#include "game/ThinWallTile.hpp"
 #include "game/Tile.hpp"
 #include "game/Vector2.hpp"
+#include "patterns/TileFactory.hpp"
+#include "patterns/WallShadingStrategy.hpp"
+#include "templates/Bounded.hpp"
 
 #include "ecs/Registry.hpp"
 
@@ -45,6 +51,45 @@ namespace {
 
         std::cout << "Texture::invalid_texture_count="
                   << escape::game::Texture::invalid_texture_count() << '\n';
+    }
+
+    void demonstrate_factory_and_strategy() {
+        const auto factory = escape::patterns::TileFactory::with_demo_registry();
+        std::cout << factory << '\n';
+
+        const auto door = factory.create(6);
+        const auto thin = factory.create(7);
+        std::cout << *door << '\n';
+        std::cout << *thin << '\n';
+
+        const auto no_shading = escape::patterns::NoShading {};
+        const auto linear = escape::patterns::LinearDistanceShading {12.0F};
+        const auto fog = escape::patterns::FogShading {
+            escape::app::Color {.r = 30, .g = 30, .b = 30, .a = 255}, 0.1F};
+
+        std::cout << no_shading << '\n';
+        std::cout << linear << '\n';
+        std::cout << fog << '\n';
+
+        const auto base = escape::app::Color {.r = 220, .g = 100, .b = 80, .a = 255};
+        std::cout << "near: " << linear.apply(base, 1.0F) << '\n';
+        std::cout << "far:  " << linear.apply(base, 10.0F) << '\n';
+        std::cout << "fogged: " << fog.apply(base, 5.0F) << '\n';
+    }
+
+    void demonstrate_templates() {
+        auto fps_target = escape::templates::Bounded<float> {60.0F, 30.0F, 240.0F};
+        auto player_inventory = escape::templates::Bounded<int> {0, 0, 99};
+        fps_target.add(30.0F);
+        player_inventory.add(150);
+
+        std::cout << fps_target << '\n';
+        std::cout << player_inventory << '\n';
+
+        std::cout << "clamp_into(float 5000.0)="
+                  << escape::templates::clamp_into<float>(fps_target, 5000.0F) << '\n';
+        std::cout << "clamp_into(int -1)="
+                  << escape::templates::clamp_into<int>(player_inventory, -1) << '\n';
     }
 }
 
@@ -97,6 +142,8 @@ int main() {
             7, escape::app::Color {.r = 200, .g = 60, .b = 90, .a = 255});
         std::unique_ptr<escape::game::Tile> textured_tile = std::make_unique<escape::game::TexturedWallTile>(
             8, brick_texture);
+        std::unique_ptr<escape::game::Tile> emissive_tile = std::make_unique<escape::game::EmissiveWallTile>(
+            9, escape::app::Color {.r = 240, .g = 200, .b = 70, .a = 255}, 0.4F);
 
         std::cout << vector << '\n';
         std::cout << translated_vector << '\n';
@@ -115,6 +162,7 @@ int main() {
         std::cout << *empty_tile << '\n';
         std::cout << *solid_tile << '\n';
         std::cout << *textured_tile << '\n';
+        std::cout << *emissive_tile << '\n';
         std::cout << *brick_texture << '\n';
         std::cout << "sample ray hit: distance=" << sample_hit.perp_distance
                   << " map_x=" << sample_hit.map_x
@@ -123,6 +171,8 @@ int main() {
                   << " cell=" << sample_hit.cell_value << '\n';
 
         demonstrate_exception_hierarchy();
+        demonstrate_factory_and_strategy();
+        demonstrate_templates();
 
         auto registry = escape::ecs::Registry {};
         const auto entity = registry.create_entity();
