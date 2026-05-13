@@ -17,6 +17,7 @@ namespace escape::game {
         auto kind() const -> std::string override { return "ThinWallTile"; }
         auto base_color() const -> app::Color override;
         auto sample(float wall_u, float wall_v, int side) const -> app::Color override;
+        auto passes_ray_through() const noexcept -> bool override { return true; }
 
         auto is_visible_through() const noexcept -> bool { return true; }
 

@@ -19,6 +19,7 @@ namespace escape::game {
         auto kind() const -> std::string override { return "DoorTile"; }
         auto base_color() const -> app::Color override;
         auto sample(float wall_u, float wall_v, int side) const -> app::Color override;
+        auto passes_ray_through() const noexcept -> bool override;
 
         auto state() const noexcept -> State { return state_; }
         auto open_fraction() const noexcept -> float { return open_fraction_; }
