@@ -137,10 +137,10 @@ namespace escape::app {
             player_.try_strafe_right(delta_time_seconds, map_);
         }
         if (keyboard_state[SDL_SCANCODE_LEFT]) {
-            player_.rotate_left(delta_time_seconds);
+            player_.rotate_right(delta_time_seconds);
         }
         if (keyboard_state[SDL_SCANCODE_RIGHT]) {
-            player_.rotate_right(delta_time_seconds);
+            player_.rotate_left(delta_time_seconds);
         }
 
         const bool space_pressed = keyboard_state[SDL_SCANCODE_SPACE];
