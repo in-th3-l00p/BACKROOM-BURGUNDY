@@ -2,6 +2,7 @@
 
 #include "Map.hpp"
 #include "Player.hpp"
+#include "Texture.hpp"
 #include "Tile.hpp"
 
 #include <algorithm>
@@ -10,7 +11,17 @@
 
 namespace escape::game {
     Raycaster::Raycaster(int screen_width, int screen_height)
-        : screen_width_(screen_width), screen_height_(screen_height) {}
+        : screen_width_(screen_width),
+          screen_height_(screen_height),
+          depth_buffer_(static_cast<std::size_t>(screen_width), 1e30F) {}
+
+    void Raycaster::set_floor_texture(std::shared_ptr<Texture> texture) {
+        floor_texture_ = std::move(texture);
+    }
+
+    void Raycaster::set_ceiling_texture(std::shared_ptr<Texture> texture) {
+        ceiling_texture_ = std::move(texture);
+    }
 
     auto Raycaster::cast_ray(int column, const Player& player, const Map& map) const -> RayHit {
         const auto camera_x = 2.0F * static_cast<float>(column) / static_cast<float>(screen_width_) - 1.0F;
@@ -82,58 +93,88 @@ namespace escape::game {
         };
     }
 
-    auto Raycaster::pick_wall_color(int cell_value, int side) const -> app::Color {
-        auto color = app::Color {};
-        switch (cell_value) {
-        case 1: color = app::Color {.r = 220, .g = 50,  .b = 60,  .a = 255}; break;
-        case 2: color = app::Color {.r = 50,  .g = 200, .b = 90,  .a = 255}; break;
-        case 3: color = app::Color {.r = 70,  .g = 100, .b = 240, .a = 255}; break;
-        case 4: color = app::Color {.r = 220, .g = 220, .b = 220, .a = 255}; break;
-        case 5: color = app::Color {.r = 240, .g = 200, .b = 70,  .a = 255}; break;
-        default: color = app::Color {.r = 200, .g = 200, .b = 200, .a = 255}; break;
+    void Raycaster::render_floor_and_ceiling(const Player& player, app::Framebuffer& framebuffer) {
+        const int width = screen_width_;
+        const int height = screen_height_;
+        const float pos_x = player.position().x();
+        const float pos_y = player.position().y();
+        const float dir_x = player.direction().x();
+        const float dir_y = player.direction().y();
+        const float plane_x = player.camera_plane().x();
+        const float plane_y = player.camera_plane().y();
+
+        const float ray_dir_x_0 = dir_x - plane_x;
+        const float ray_dir_y_0 = dir_y - plane_y;
+        const float ray_dir_x_1 = dir_x + plane_x;
+        const float ray_dir_y_1 = dir_y + plane_y;
+
+        const float pos_z = 0.5F * static_cast<float>(height);
+
+        for (int y = 0; y < height; ++y) {
+            const bool is_floor = y > height / 2;
+            const int p = is_floor ? (y - height / 2) : (height / 2 - y);
+            if (p == 0) {
+                continue;
+            }
+            const float row_distance = pos_z / static_cast<float>(p);
+
+            const float floor_step_x = row_distance * (ray_dir_x_1 - ray_dir_x_0) / static_cast<float>(width);
+            const float floor_step_y = row_distance * (ray_dir_y_1 - ray_dir_y_0) / static_cast<float>(width);
+            float floor_x = pos_x + row_distance * ray_dir_x_0;
+            float floor_y = pos_y + row_distance * ray_dir_y_0;
+
+            for (int x = 0; x < width; ++x) {
+                const int cell_x = static_cast<int>(floor_x);
+                const int cell_y = static_cast<int>(floor_y);
+                const float u = floor_x - static_cast<float>(cell_x);
+                const float v = floor_y - static_cast<float>(cell_y);
+
+                if (is_floor && floor_texture_ != nullptr) {
+                    framebuffer.set_pixel(x, y, floor_texture_->sample_normalized(u, v));
+                } else if (!is_floor && ceiling_texture_ != nullptr) {
+                    framebuffer.set_pixel(x, y, ceiling_texture_->sample_normalized(u, v));
+                } else if (is_floor) {
+                    framebuffer.set_pixel(x, y, app::Color {.r = 40, .g = 40, .b = 40, .a = 255});
+                } else {
+                    framebuffer.set_pixel(x, y, app::Color {.r = 30, .g = 30, .b = 50, .a = 255});
+                }
+
+                floor_x += floor_step_x;
+                floor_y += floor_step_y;
+            }
         }
-        if (side == 1) {
-            color.r = static_cast<unsigned char>(color.r / 2);
-            color.g = static_cast<unsigned char>(color.g / 2);
-            color.b = static_cast<unsigned char>(color.b / 2);
-        }
-        return color;
     }
 
-    void Raycaster::render(const Player& player, const Map& map, app::Window& window) const {
-        const auto ceiling_color = app::Color {.r = 30, .g = 30, .b = 50, .a = 255};
-        const auto floor_color   = app::Color {.r = 40, .g = 40, .b = 40, .a = 255};
-
-        const int half_h = screen_height_ / 2;
-        for (int x = 0; x < screen_width_; ++x) {
-            window.draw_vertical_strip(x, 0, half_h, ceiling_color);
-            window.draw_vertical_strip(x, half_h, screen_height_ - 1, floor_color);
-        }
-
+    void Raycaster::render_walls(const Player& player, const Map& map, app::Framebuffer& framebuffer) {
         for (int x = 0; x < screen_width_; ++x) {
             const auto hit = cast_ray(x, player, map);
             const float safe_distance = std::max(hit.perp_distance, 0.0001F);
-            const int line_height = static_cast<int>(static_cast<float>(screen_height_) / safe_distance);
+            depth_buffer_[static_cast<std::size_t>(x)] = safe_distance;
 
-            int draw_start = -line_height / 2 + screen_height_ / 2;
+            const int line_height = static_cast<int>(static_cast<float>(screen_height_) / safe_distance);
+            const int unclipped_top = -line_height / 2 + screen_height_ / 2;
+            int draw_start = unclipped_top;
             int draw_end = line_height / 2 + screen_height_ / 2;
             draw_start = std::max(draw_start, 0);
             draw_end = std::min(draw_end, screen_height_ - 1);
 
             if (!map.in_bounds(hit.map_x, hit.map_y)) {
-                const auto fallback = pick_wall_color(hit.cell_value, hit.side);
-                window.draw_vertical_strip(x, draw_start, draw_end, fallback);
                 continue;
             }
-
             const auto& tile = map.tile_at(hit.map_x, hit.map_y);
             for (int y = draw_start; y <= draw_end; ++y) {
-                const float wall_v = static_cast<float>(y - (-line_height / 2 + screen_height_ / 2))
-                                     / static_cast<float>(std::max(line_height, 1));
+                const float wall_v = static_cast<float>(y - unclipped_top)
+                                   / static_cast<float>(std::max(line_height, 1));
                 const auto color = tile.sample(hit.wall_x, wall_v, hit.side);
-                window.draw_pixel(x, y, color);
+                framebuffer.set_pixel(x, y, color);
             }
         }
+    }
+
+    void Raycaster::render(const Player& player, const Map& map, app::Framebuffer& framebuffer) {
+        framebuffer.clear(app::Color {.r = 0, .g = 0, .b = 0, .a = 255});
+        render_floor_and_ceiling(player, framebuffer);
+        render_walls(player, map, framebuffer);
     }
 
     auto operator<<(std::ostream& stream, const Raycaster& raycaster) -> std::ostream& {

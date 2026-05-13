@@ -68,6 +68,7 @@ target_sources(${MAIN_EXECUTABLE_NAME}
     PRIVATE
         src/app/GameEngine.cpp
         src/app/Window.cpp
+        src/app/Framebuffer.cpp
         src/game/Vector2.cpp
         src/game/Size2D.cpp
         src/game/RenderStyle.cpp

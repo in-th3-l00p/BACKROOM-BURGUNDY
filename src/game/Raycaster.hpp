@@ -1,12 +1,16 @@
 #pragma once
 
+#include "../app/Framebuffer.hpp"
 #include "../app/Window.hpp"
 
 #include <iosfwd>
+#include <memory>
+#include <vector>
 
 namespace escape::game {
     class Map;
     class Player;
+    class Texture;
 
     struct RayHit {
         float perp_distance {0.0F};
@@ -25,15 +29,23 @@ namespace escape::game {
 
         auto screen_width() const noexcept -> int { return screen_width_; }
         auto screen_height() const noexcept -> int { return screen_height_; }
+        auto depth_buffer() const noexcept -> const std::vector<float>& { return depth_buffer_; }
 
         auto cast_ray(int column, const Player& player, const Map& map) const -> RayHit;
-        void render(const Player& player, const Map& map, app::Window& window) const;
+        void render(const Player& player, const Map& map, app::Framebuffer& framebuffer);
+
+        void set_floor_texture(std::shared_ptr<Texture> texture);
+        void set_ceiling_texture(std::shared_ptr<Texture> texture);
 
     private:
-        auto pick_wall_color(int cell_value, int side) const -> app::Color;
+        void render_walls(const Player& player, const Map& map, app::Framebuffer& framebuffer);
+        void render_floor_and_ceiling(const Player& player, app::Framebuffer& framebuffer);
 
         int screen_width_;
         int screen_height_;
+        std::vector<float> depth_buffer_;
+        std::shared_ptr<Texture> floor_texture_;
+        std::shared_ptr<Texture> ceiling_texture_;
     };
 
     auto operator<<(std::ostream& stream, const Raycaster& raycaster) -> std::ostream&;

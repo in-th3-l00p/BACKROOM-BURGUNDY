@@ -4,6 +4,7 @@
 #include "../game/Map.hpp"
 #include "../game/Player.hpp"
 #include "../game/Raycaster.hpp"
+#include "Framebuffer.hpp"
 #include "Window.hpp"
 
 #include <iosfwd>
@@ -33,6 +34,7 @@ namespace escape::app {
         void render();
 
         Window window_;
+        Framebuffer framebuffer_;
         ecs::Registry registry_ {};
         game::Map map_;
         game::Player player_;
