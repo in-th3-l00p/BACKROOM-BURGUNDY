@@ -13,7 +13,8 @@ namespace escape::game {
     Raycaster::Raycaster(int screen_width, int screen_height)
         : screen_width_(screen_width),
           screen_height_(screen_height),
-          depth_buffer_(static_cast<std::size_t>(screen_width), 1e30F) {}
+          depth_buffer_(static_cast<std::size_t>(screen_width), 1e30F),
+          shading_(std::make_unique<patterns::LinearDistanceShading>(20.0F)) {}
 
     void Raycaster::set_floor_texture(std::shared_ptr<Texture> texture) {
         floor_texture_ = std::move(texture);
@@ -21,6 +22,12 @@ namespace escape::game {
 
     void Raycaster::set_ceiling_texture(std::shared_ptr<Texture> texture) {
         ceiling_texture_ = std::move(texture);
+    }
+
+    void Raycaster::set_shading_strategy(std::unique_ptr<patterns::WallShadingStrategy> strategy) {
+        if (strategy != nullptr) {
+            shading_ = std::move(strategy);
+        }
     }
 
     auto Raycaster::cast_ray(int column, const Player& player, const Map& map) const -> RayHit {
@@ -165,8 +172,11 @@ namespace escape::game {
             for (int y = draw_start; y <= draw_end; ++y) {
                 const float wall_v = static_cast<float>(y - unclipped_top)
                                    / static_cast<float>(std::max(line_height, 1));
-                const auto color = tile.sample(hit.wall_x, wall_v, hit.side);
-                framebuffer.set_pixel(x, y, color);
+                const auto base = tile.sample(hit.wall_x, wall_v, hit.side);
+                if (base.a == 0) {
+                    continue;
+                }
+                framebuffer.set_pixel(x, y, shading_->apply(base, safe_distance));
             }
         }
     }

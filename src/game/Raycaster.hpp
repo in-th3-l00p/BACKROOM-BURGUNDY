@@ -2,6 +2,7 @@
 
 #include "../app/Framebuffer.hpp"
 #include "../app/Window.hpp"
+#include "../patterns/WallShadingStrategy.hpp"
 
 #include <iosfwd>
 #include <memory>
@@ -36,6 +37,9 @@ namespace escape::game {
 
         void set_floor_texture(std::shared_ptr<Texture> texture);
         void set_ceiling_texture(std::shared_ptr<Texture> texture);
+        void set_shading_strategy(std::unique_ptr<patterns::WallShadingStrategy> strategy);
+
+        auto shading_strategy() const noexcept -> const patterns::WallShadingStrategy& { return *shading_; }
 
     private:
         void render_walls(const Player& player, const Map& map, app::Framebuffer& framebuffer);
@@ -46,6 +50,7 @@ namespace escape::game {
         std::vector<float> depth_buffer_;
         std::shared_ptr<Texture> floor_texture_;
         std::shared_ptr<Texture> ceiling_texture_;
+        std::unique_ptr<patterns::WallShadingStrategy> shading_;
     };
 
     auto operator<<(std::ostream& stream, const Raycaster& raycaster) -> std::ostream&;
