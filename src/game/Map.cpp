@@ -1,6 +1,7 @@
 #include "Map.hpp"
 
 #include "../errors/Exceptions.hpp"
+#include "EmissiveWallTile.hpp"
 #include "EmptyTile.hpp"
 #include "SolidWallTile.hpp"
 #include "Texture.hpp"
@@ -165,7 +166,7 @@ namespace escape::game {
         case 4:
             return std::make_unique<TexturedWallTile>(4, get_checker_texture());
         case 5:
-            return std::make_unique<SolidWallTile>(5, app::Color {.r = 240, .g = 200, .b = 70, .a = 255});
+            return std::make_unique<EmissiveWallTile>(5, app::Color {.r = 240, .g = 200, .b = 70, .a = 255}, 0.35F);
         default:
             return std::make_unique<SolidWallTile>(cell_value,
                 app::Color {.r = 200, .g = 200, .b = 200, .a = 255});
