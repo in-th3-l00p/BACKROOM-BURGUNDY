@@ -5,6 +5,7 @@
 #include <string>
 
 struct SDL_Renderer;
+struct SDL_Texture;
 struct SDL_Window;
 
 namespace escape::app {
@@ -44,6 +45,7 @@ namespace escape::app {
         void draw_vertical_strip(int column, int top_y, int bottom_y, Color color);
         void draw_pixel(int x, int y, Color color);
         void present();
+        void present_framebuffer(const class Framebuffer& framebuffer);
 
         auto is_open() const noexcept -> bool {
             return is_open_;
@@ -66,9 +68,16 @@ namespace escape::app {
             void operator()(SDL_Renderer* renderer) const noexcept;
         };
 
+        struct TextureDeleter {
+            void operator()(SDL_Texture* texture) const noexcept;
+        };
+
         WindowConfig config_ {};
         std::unique_ptr<SDL_Window, WindowDeleter> window_ {nullptr};
         std::unique_ptr<SDL_Renderer, RendererDeleter> renderer_ {nullptr};
+        std::unique_ptr<SDL_Texture, TextureDeleter> framebuffer_texture_ {nullptr};
+        int framebuffer_texture_width_ {0};
+        int framebuffer_texture_height_ {0};
         bool is_open_ {true};
         bool sdl_initialized_ {false};
     };

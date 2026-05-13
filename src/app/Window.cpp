@@ -1,5 +1,7 @@
 #include "Window.hpp"
 
+#include "Framebuffer.hpp"
+
 #include <ostream>
 #include <stdexcept>
 #include <utility>
@@ -106,6 +108,29 @@ namespace escape::app {
         ensure(SDL_RenderPresent(renderer_.get()), "Failed to present renderer");
     }
 
+    void Window::present_framebuffer(const Framebuffer& framebuffer) {
+        if (framebuffer_texture_ == nullptr
+            || framebuffer_texture_width_ != framebuffer.width()
+            || framebuffer_texture_height_ != framebuffer.height()) {
+            framebuffer_texture_.reset(SDL_CreateTexture(renderer_.get(),
+                SDL_PIXELFORMAT_RGBA32,
+                SDL_TEXTUREACCESS_STREAMING,
+                framebuffer.width(),
+                framebuffer.height()));
+            ensure(framebuffer_texture_ != nullptr, "Failed to create framebuffer texture");
+            framebuffer_texture_width_ = framebuffer.width();
+            framebuffer_texture_height_ = framebuffer.height();
+            SDL_SetTextureScaleMode(framebuffer_texture_.get(), SDL_SCALEMODE_NEAREST);
+        }
+
+        ensure(SDL_UpdateTexture(framebuffer_texture_.get(), nullptr,
+                   framebuffer.pixels(), framebuffer.pitch_bytes()),
+            "Failed to upload framebuffer pixels");
+        ensure(SDL_RenderTexture(renderer_.get(), framebuffer_texture_.get(), nullptr, nullptr),
+            "Failed to render framebuffer texture");
+        ensure(SDL_RenderPresent(renderer_.get()), "Failed to present renderer");
+    }
+
     void Window::WindowDeleter::operator()(SDL_Window* window) const noexcept {
         if (window != nullptr) {
             SDL_DestroyWindow(window);
@@ -115,6 +140,12 @@ namespace escape::app {
     void Window::RendererDeleter::operator()(SDL_Renderer* renderer) const noexcept {
         if (renderer != nullptr) {
             SDL_DestroyRenderer(renderer);
+        }
+    }
+
+    void Window::TextureDeleter::operator()(SDL_Texture* texture) const noexcept {
+        if (texture != nullptr) {
+            SDL_DestroyTexture(texture);
         }
     }
 
