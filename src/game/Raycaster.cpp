@@ -132,8 +132,8 @@ namespace escape::game {
         auto hits = std::vector<RayHit> {};
         hits.reserve(4);
 
-        int side = 0;
         for (int safety = 0; safety < 1024; ++safety) {
+            int side = 0;
             if (state.side_dist_x < state.side_dist_y) {
                 state.side_dist_x += state.delta_dist_x;
                 state.map_x += state.step_x;

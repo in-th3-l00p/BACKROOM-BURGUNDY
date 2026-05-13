@@ -16,6 +16,12 @@ runs:
           libwayland-dev wayland-protocols libegl1-mesa-dev \
           libpulse-dev libasound2-dev libsndio-dev libudev-dev
 
+    - name: Install macOS Dependencies
+      shell: bash
+      if: runner.os == 'macOS'
+      run: |
+        brew install sdl3
+
     - name: Install valgrind
       shell: bash
       if: runner.os == 'Linux' && matrix.runs_valgrind == true
