@@ -30,10 +30,31 @@ namespace escape::patterns {
         }
 
         auto door_texture() -> std::shared_ptr<game::Texture> {
-            static auto t = std::make_shared<game::Texture>(game::Texture::make_gradient(
-                64, 64,
-                app::Color {.r = 150, .g = 90, .b = 50, .a = 255},
-                app::Color {.r = 80,  .g = 50, .b = 30, .a = 255}));
+            constexpr int width = 64;
+            constexpr int height = 64;
+            auto pixels = std::vector<app::Color> {};
+            pixels.reserve(static_cast<std::size_t>(width * height));
+            const auto plank = app::Color {.r = 150, .g = 95, .b = 55, .a = 255};
+            const auto deep_plank = app::Color {.r = 110, .g = 65, .b = 35, .a = 255};
+            const auto frame = app::Color {.r = 60, .g = 30, .b = 15, .a = 255};
+            const auto handle = app::Color {.r = 230, .g = 200, .b = 80, .a = 255};
+            for (int y = 0; y < height; ++y) {
+                for (int x = 0; x < width; ++x) {
+                    const bool border = x < 3 || x >= width - 3 || y < 3 || y >= height - 3;
+                    const bool horizontal_band = y == height / 3 || y == 2 * height / 3
+                                              || y == height / 3 + 1 || y == 2 * height / 3 + 1;
+                    const bool plank_seam = (x % 16) < 1;
+                    const bool handle_pixel = (x >= width - 14 && x <= width - 9)
+                                            && (y >= height / 2 - 3 && y <= height / 2 + 3);
+                    auto color = (y % 2 == 0) ? plank : deep_plank;
+                    if (plank_seam) color = frame;
+                    if (horizontal_band) color = frame;
+                    if (border) color = frame;
+                    if (handle_pixel) color = handle;
+                    pixels.push_back(color);
+                }
+            }
+            static auto t = std::make_shared<game::Texture>(width, height, std::move(pixels));
             return t;
         }
 

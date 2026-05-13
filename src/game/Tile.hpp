@@ -24,6 +24,8 @@ namespace escape::game {
         virtual auto base_color() const -> app::Color = 0;
         virtual auto sample(float wall_u, float wall_v, int side) const -> app::Color = 0;
 
+        virtual auto passes_ray_through() const noexcept -> bool { return false; }
+
         void print(std::ostream& stream) const;
 
     protected:

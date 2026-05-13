@@ -33,6 +33,7 @@ namespace escape::game {
         auto depth_buffer() const noexcept -> const std::vector<float>& { return depth_buffer_; }
 
         auto cast_ray(int column, const Player& player, const Map& map) const -> RayHit;
+        auto cast_ray_multi(int column, const Player& player, const Map& map) const -> std::vector<RayHit>;
         void render(const Player& player, const Map& map, app::Framebuffer& framebuffer);
 
         void set_floor_texture(std::shared_ptr<Texture> texture);

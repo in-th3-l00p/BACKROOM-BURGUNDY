@@ -25,6 +25,10 @@ namespace escape::game {
         return state_ == State::Open;
     }
 
+    auto DoorTile::passes_ray_through() const noexcept -> bool {
+        return open_fraction_ > 0.0F;
+    }
+
     auto DoorTile::base_color() const -> app::Color {
         return texture_->sample(0, 0);
     }

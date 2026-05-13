@@ -52,10 +52,11 @@ namespace escape::app {
             Color {.r = 20, .g = 20, .b = 35, .a = 255}, 0.06F));
 
         auto factory = patterns::TileFactory::with_demo_registry();
-        map_.set_tile(11, 12, factory.create(6));
-        map_.set_tile(13, 12, factory.create(6));
-        map_.set_tile(11, 9,  factory.create(7));
-        map_.set_tile(13, 9,  factory.create(7));
+        map_.set_tile(11, 10, factory.create(6));
+        map_.set_tile(11, 13, factory.create(6));
+        map_.set_tile(15, 12, factory.create(7));
+        map_.set_tile(16, 12, factory.create(7));
+        map_.set_tile(17, 12, factory.create(7));
 
         auto pillar_texture = std::make_shared<game::Texture>(
             game::Texture::make_gradient(32, 64,
