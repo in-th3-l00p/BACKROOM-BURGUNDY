@@ -83,6 +83,10 @@ target_sources(${MAIN_EXECUTABLE_NAME}
         src/game/EmissiveWallTile.cpp
         src/game/Sprite.cpp
         src/game/SpriteRenderer.cpp
+        src/game/DoorTile.cpp
+        src/game/ThinWallTile.cpp
+        src/patterns/TileFactory.cpp
+        src/patterns/WallShadingStrategy.cpp
 )
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )

@@ -6,9 +6,11 @@
 #include "../game/Raycaster.hpp"
 #include "../game/Sprite.hpp"
 #include "../game/SpriteRenderer.hpp"
+#include "../templates/Bounded.hpp"
 #include "Framebuffer.hpp"
 #include "Window.hpp"
 
+#include <utility>
 #include <vector>
 
 #include <iosfwd>
@@ -35,6 +37,8 @@ namespace escape::app {
         friend auto operator<<(std::ostream& stream, const GameEngine& game_engine) -> std::ostream&;
 
         void handle_input(float delta_time_seconds);
+        void advance_doors(float delta_time_seconds);
+        auto find_door_in_front() -> std::pair<int, int>;
         void render();
 
         Window window_;
@@ -45,6 +49,9 @@ namespace escape::app {
         game::Raycaster raycaster_;
         game::SpriteRenderer sprite_renderer_;
         std::vector<game::Sprite> sprites_ {};
+        templates::Bounded<float> fps_target_;
+        templates::Bounded<int> player_inventory_;
+        bool space_was_pressed_ {false};
     };
 
     auto operator<<(std::ostream& stream, const GameEngine& game_engine) -> std::ostream&;
