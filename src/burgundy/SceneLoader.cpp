@@ -1,7 +1,6 @@
 #include "SceneLoader.hpp"
 
 #include "../errors/Exceptions.hpp"
-#include "../game/Map.hpp"
 #include "../patterns/TileFactory.hpp"
 #include "CombinationPuzzle.hpp"
 #include "ExaminePuzzle.hpp"
@@ -14,6 +13,7 @@
 
 #include <fstream>
 #include <ostream>
+#include <unordered_map>
 #include <utility>
 
 namespace escape::burgundy {
@@ -90,11 +90,52 @@ namespace escape::burgundy {
             }
             throw errors::MapLoadError {"Unknown interactable kind: " + kind};
         }
+
+        auto build_map_from_layout(const json& document) -> game::Map {
+            const auto factory = patterns::TileFactory::with_burgundy_registry();
+
+            if (!document.contains("layout") || !document["layout"].is_array()) {
+                return game::Map::build_demo_map();
+            }
+
+            std::unordered_map<char, int> palette;
+            if (document.contains("palette") && document["palette"].is_object()) {
+                for (const auto& [key, value] : document["palette"].items()) {
+                    if (!key.empty()) {
+                        palette[key[0]] = value.get<int>();
+                    }
+                }
+            }
+            if (palette.find('.') == palette.end()) palette['.'] = 0;
+            if (palette.find(' ') == palette.end()) palette[' '] = 0;
+            if (palette.find('#') == palette.end()) palette['#'] = 1;
+
+            const auto& rows = document["layout"];
+            const int height = static_cast<int>(rows.size());
+            int width = 0;
+            for (const auto& row : rows) {
+                width = std::max(width, static_cast<int>(row.get<std::string>().size()));
+            }
+            if (width <= 0 || height <= 0) {
+                throw errors::MapLoadError {"Scene layout is empty"};
+            }
+
+            auto tiles = std::vector<std::unique_ptr<game::Tile>> {};
+            tiles.reserve(static_cast<std::size_t>(width * height));
+            for (int y = 0; y < height; ++y) {
+                const auto row = rows[static_cast<std::size_t>(y)].get<std::string>();
+                for (int x = 0; x < width; ++x) {
+                    const char glyph = (x < static_cast<int>(row.size())) ? row[static_cast<std::size_t>(x)] : ' ';
+                    const auto iterator = palette.find(glyph);
+                    const int cell_id = (iterator == palette.end()) ? 0 : iterator->second;
+                    tiles.push_back(factory.create(cell_id));
+                }
+            }
+            return game::Map {width, height, std::move(tiles)};
+        }
     }
 
-    auto SceneLoader::load_from_file(const std::string& path,
-                                     GameDirector& director,
-                                     game::Map& map) -> LoadResult {
+    auto SceneLoader::load_from_file(const std::string& path, GameDirector& director) -> LoadResult {
         auto file = std::ifstream {path};
         if (!file.is_open()) {
             throw errors::MapLoadError {"Failed to open scene file: " + path};
@@ -107,18 +148,15 @@ namespace escape::burgundy {
             throw errors::MapLoadError {std::string {"Invalid scene JSON: "} + error.what()};
         }
 
-        auto result = LoadResult {};
-        result.title = document.value("title", std::string {"Burgundy Room"});
-        result.intro = document.value("intro", std::string {});
-        result.map_width = map.width();
-        result.map_height = map.height();
+        auto map = build_map_from_layout(document);
 
+        SceneSpawn spawn;
         if (document.contains("spawn")) {
-            const auto& spawn = document["spawn"];
-            result.spawn.x = spawn.value("x", result.spawn.x);
-            result.spawn.y = spawn.value("y", result.spawn.y);
-            result.spawn.dir_x = spawn.value("dir_x", result.spawn.dir_x);
-            result.spawn.dir_y = spawn.value("dir_y", result.spawn.dir_y);
+            const auto& spawn_spec = document["spawn"];
+            spawn.x = spawn_spec.value("x", spawn.x);
+            spawn.y = spawn_spec.value("y", spawn.y);
+            spawn.dir_x = spawn_spec.value("dir_x", spawn.dir_x);
+            spawn.dir_y = spawn_spec.value("dir_y", spawn.dir_y);
         }
 
         if (document.contains("items") && document["items"].is_array()) {
@@ -139,21 +177,6 @@ namespace escape::burgundy {
             }
         }
 
-        if (document.contains("tile_overrides") && document["tile_overrides"].is_array()) {
-            const auto factory = patterns::TileFactory::with_demo_registry();
-            for (const auto& spec : document["tile_overrides"]) {
-                const auto x = spec.value("x", -1);
-                const auto y = spec.value("y", -1);
-                const auto cell_id = spec.value("cell_id", -1);
-                if (x < 0 || y < 0 || cell_id < 0) {
-                    continue;
-                }
-                if (map.in_bounds(x, y)) {
-                    map.set_tile(x, y, factory.create(cell_id));
-                }
-            }
-        }
-
         if (document.contains("interactables") && document["interactables"].is_array()) {
             for (const auto& spec : document["interactables"]) {
                 const auto x = spec.value("x", -1);
@@ -171,13 +194,18 @@ namespace escape::burgundy {
             }
         }
 
-        return result;
+        return LoadResult {
+            std::move(map),
+            spawn,
+            document.value("title", std::string {"Burgundy Room"}),
+            document.value("intro", std::string {}),
+        };
     }
 
     auto operator<<(std::ostream& stream, const SceneLoader::LoadResult& result) -> std::ostream& {
         stream << "Scene{title=" << result.title
                << ", spawn=(" << result.spawn.x << "," << result.spawn.y << ")"
-               << ", map=" << result.map_width << "x" << result.map_height << "}";
+               << ", map=" << result.map << "}";
         return stream;
     }
 }

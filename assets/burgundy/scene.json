@@ -1,0 +1,102 @@
+{
+  "title": "The Burgundy Room",
+  "intro": "1974. Back office. Sunrise in a few hours. The owner vanished with the combination — and somebody's coming back for the safe.",
+  "spawn": { "x": 3.5, "y": 3.5, "dir_x": 1.0, "dir_y": 0.0 },
+  "palette": {
+    ".": 0,
+    "#": 1,
+    "W": 2,
+    "V": 3,
+    "K": 4,
+    "L": 5,
+    "D": 6,
+    "C": 7
+  },
+  "layout": [
+    "########################",
+    "#......#KKKKK#WWWWWWWWW#",
+    "#......#K...K#W.......W#",
+    "#......#K...K#W.......W#",
+    "#......#K...K#W.......W#",
+    "#......#K...KDW.......W#",
+    "#......#K...K#W.......W#",
+    "#......###D###W.......W#",
+    "#......#......W.......W#",
+    "########CCCCCCW.......W#",
+    "#......L......D.......W#",
+    "#.............W.......W#",
+    "#............LWLLLLLLLW#",
+    "#.............WWWWWWWWW#",
+    "#######WWWWW######......",
+    "#VVVV..W...W#V.V........",
+    "#V..VWWW...W#V.V........",
+    "#V..D.......DV.V........",
+    "#V..V##.....#V.V........",
+    "#VVVV##.....#VVV........",
+    "#......................#",
+    "#......................#",
+    "#......................#",
+    "########################"
+  ],
+  "items": [
+    { "id": "matchbook_blue",   "title": "Blue matchbook",   "description": "Front: 'Lady Soul'. Back: a phone number scribbled out." },
+    { "id": "matchbook_red",    "title": "Red matchbook",    "description": "Front: 'Cold Sweat'. Back: '67 — best year'." },
+    { "id": "matchbook_gold",   "title": "Gold matchbook",   "description": "Front: 'Try a Little Tenderness'. Back: 'Otis, 66'." },
+    { "id": "matchbook_black",  "title": "Black matchbook",  "description": "Front: 'Papa Was a Rolling Stone'. Back: 'last call, 72'." },
+    { "id": "framed_photo",     "title": "Framed photo",     "description": "Gunn in the corner, 71. Heavy frame. Numbers etched on the back: 12-24-08-30." },
+    { "id": "ledger_scrap_a",   "title": "Ledger scrap (top)", "description": "...owed Pony three large since 73, vault still says no..." },
+    { "id": "ledger_scrap_b",   "title": "Ledger scrap (mid)", "description": "...combination's in plain sight if you knew where to look — Otis, then the year he died..." },
+    { "id": "cabinet_key",      "title": "Liquor cabinet key", "description": "Brass, dirty. Smells like rye." },
+    { "id": "safe_key",         "title": "Safe key",         "description": "Small. Worn bow. Fits the back door." }
+  ],
+  "puzzles": [
+    {
+      "id": "jukebox",
+      "kind": "keypad",
+      "title": "Jukebox panel",
+      "prompt": "Punch in the running order. The matchbooks know it — earliest year first.",
+      "solution": "66677273",
+      "reward_item": "cabinet_key",
+      "reward_message": "The selector clacks. A cabinet key drops from underneath."
+    },
+    {
+      "id": "liquor_cabinet",
+      "kind": "examine",
+      "title": "Liquor cabinet",
+      "prompt": "The cabinet opens. Behind the green Chartreuse, a framed photo.",
+      "revelations": [
+        "You ease the cabinet door open. It smells like old paper and worse spirits.",
+        "Behind the Chartreuse: a small frame. You take it out and turn it over.",
+        "Etched in the brass: 12-24-08-30."
+      ],
+      "reward_item": "framed_photo"
+    },
+    {
+      "id": "vault",
+      "kind": "combination",
+      "title": "Safe behind the portrait",
+      "prompt": "The portrait swings out. Four-wheel dial. Set the numbers from the photo.",
+      "solution": [12, 24, 8, 30],
+      "wheel_max": 39,
+      "reward_item": "safe_key",
+      "reward_message": "The vault opens. A small key inside, and a stack of bills you don't touch."
+    }
+  ],
+  "interactables": [
+    { "x": 4,  "y": 2,  "kind": "pickup",  "item": "matchbook_blue",  "label": "Matchbook on the desk", "narrative": "Blue matchbook. Lady Soul. You pocket it." },
+    { "x": 4,  "y": 6,  "kind": "pickup",  "item": "ledger_scrap_a",  "label": "Ledger scrap (drawer)", "narrative": "A torn ledger page in the top drawer." },
+    { "x": 2,  "y": 8,  "kind": "pickup",  "item": "matchbook_red",   "label": "Matchbook on the floor", "narrative": "Red matchbook by the doorway." },
+    { "x": 15, "y": 10, "kind": "pickup",  "item": "matchbook_gold",  "label": "Matchbook in the booth", "narrative": "Gold matchbook tucked between cushions." },
+    { "x": 17, "y": 12, "kind": "pickup",  "item": "matchbook_black", "label": "Matchbook by the stage", "narrative": "Black matchbook beneath the stage edge." },
+    { "x": 11, "y": 11, "kind": "pickup",  "item": "ledger_scrap_b",  "label": "Ledger scrap (under the rug)", "narrative": "You lift the rug. Another scrap." },
+    { "x": 13, "y": 12, "kind": "puzzle",  "puzzle": "jukebox",        "label": "Jukebox", "narrative": "The jukebox is warm and humming. A keypad on the front." },
+    { "x": 18, "y": 5,  "kind": "puzzle",  "puzzle": "liquor_cabinet", "label": "Liquor cabinet", "narrative": "The cabinet door rattles. Use the key?" },
+    { "x": 8,  "y": 17, "kind": "puzzle",  "puzzle": "vault",          "label": "Portrait of the owner", "narrative": "The portrait pivots on a hinge. A safe behind it." },
+    { "x": 23, "y": 17, "kind": "exit",    "label": "Back door", "requires_puzzle": "vault", "narrative": "You fit the key. The deadbolt turns. Daylight crawls in." }
+  ],
+  "opening_narrative": [
+    "You wake on the carpet. Velvet wallpaper. Something is humming through the wall.",
+    "Hint: walk close to anything interesting and press E to interact.",
+    "Find the matchbooks — there's a code on the backs."
+  ]
+}

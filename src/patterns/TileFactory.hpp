@@ -19,6 +19,7 @@ namespace escape::patterns {
         auto registered_count() const noexcept -> std::size_t { return builders_.size(); }
 
         static auto with_demo_registry() -> TileFactory;
+        static auto with_burgundy_registry() -> TileFactory;
 
     private:
         std::unordered_map<int, Builder> builders_;

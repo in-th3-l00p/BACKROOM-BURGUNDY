@@ -1,13 +1,11 @@
 #pragma once
 
+#include "../game/Map.hpp"
 #include "GameDirector.hpp"
 
 #include <iosfwd>
+#include <optional>
 #include <string>
-
-namespace escape::game {
-    class Map;
-}
 
 namespace escape::burgundy {
     struct SceneSpawn {
@@ -20,18 +18,15 @@ namespace escape::burgundy {
     class SceneLoader {
     public:
         struct LoadResult {
+            game::Map map;
             SceneSpawn spawn;
-            int map_width {0};
-            int map_height {0};
             std::string title;
             std::string intro;
         };
 
-        // Populates an existing GameDirector and Map from a JSON file.
+        // Build a Map and populate a GameDirector from a JSON scene file.
         // The JSON schema is documented in assets/burgundy/scene.example.json.
-        static auto load_from_file(const std::string& path,
-                                   GameDirector& director,
-                                   game::Map& map) -> LoadResult;
+        static auto load_from_file(const std::string& path, GameDirector& director) -> LoadResult;
     };
 
     auto operator<<(std::ostream& stream, const SceneLoader::LoadResult& result) -> std::ostream&;

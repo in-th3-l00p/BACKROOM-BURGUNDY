@@ -190,7 +190,10 @@ int main() {
             return 0;
         }
 
-        auto engine = escape::app::GameEngine {escape::app::WindowConfig {"escape engine", 1280, 720}};
+        auto engine = escape::app::GameEngine {escape::app::GameEngineConfig {
+            escape::app::WindowConfig {"BACKROOM BURGUNDY", 1280, 720},
+            "assets/burgundy/scene.json",
+        }};
         std::cout << engine << '\n';
         engine.run();
         return 0;
