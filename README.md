@@ -69,6 +69,13 @@ ESCAPE_HEADLESS=1 ./build/backrooms
 | `←` / `→`      | rotate (yaw)                    |
 | `Space`        | open/close the door in front    |
 
+## Documentation
+
+- [`docs/game-design.md`](docs/game-design.md) — the game design (story, mechanics, content)
+- [`docs/architecture.md`](docs/architecture.md) — technical walkthrough of the engine
+- [`docs/project-management.md`](docs/project-management.md) — phases, gates, conventions, status
+- [`docs/subagents.md`](docs/subagents.md) — development-agent registry
+
 ## License
 
 Licensed under [AGPLv3](LICENSE).
