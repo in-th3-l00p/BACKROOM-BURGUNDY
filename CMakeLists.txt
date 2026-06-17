@@ -1,51 +1,19 @@
 cmake_minimum_required(VERSION 3.26)
-
-# NOTE: update executable name in .github/workflows/cmake.yml:25 when changing executable name in this file
-# for now, the project name is used as the executable name
-set(MAIN_PROJECT_NAME "oop")
-set(MAIN_EXECUTABLE_NAME "${MAIN_PROJECT_NAME}")
-
-
-project(${MAIN_PROJECT_NAME})
-# set(CMAKE_PROJECT_VERSION_MAJOR 0)
-# set(CMAKE_PROJECT_VERSION_MINOR 0)
-# set(CMAKE_PROJECT_VERSION_PATCH 1)
+project(backrooms CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-include(cmake/Options.cmake)
-include(cmake/CompilerFlags.cmake)
-include(cmake/CopyHelper.cmake)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+endif()
 
-###############################################################################
+option(USE_ASAN "Build with AddressSanitizer/UBSan" OFF)
 
-# external dependencies with FetchContent
-# include(FetchContent)
-#
-# set(FETCHCONTENT_QUIET OFF CACHE INTERNAL "Override verbose output" FORCE)
-# set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE INTERNAL "Override update strategy" FORCE)
-#
-# NOTE: Also update env vars used for caching in
-#     - .github/actions/configure-cmake/action.yml
-#     - .github/workflows/cmake.yml
-# FetchContent_Declare(
-#     SomeLib
-#     GIT_REPOSITORY https://github.com/<SomeUser>/<SomeLib>.git
-#     GIT_TAG        <some_git_hash> # <which tag/branch @ <some_date>>
-#     GIT_SHALLOW    1  # works only with branches or tags, not with arbitrary commit hashes
-#     GIT_PROGRESS   ON
-# )
-#
-# FetchContent_MakeAvailable(SomeLib)
-
-###############################################################################
-
-# external dependencies with find_package
-
-# find_package(Threads REQUIRED)
-
+# ---------------------------------------------------------------------------
+# Dependencies: SDL3 (prefer an installed copy, otherwise fetch from source).
+# ---------------------------------------------------------------------------
 execute_process(
     COMMAND brew --prefix sdl3
     OUTPUT_VARIABLE SDL3_BREW_PREFIX
@@ -58,14 +26,13 @@ endif()
 
 find_package(SDL3 CONFIG QUIET)
 if(NOT SDL3_FOUND)
-    message(STATUS "SDL3 not found via find_package, fetching it from source")
+    message(STATUS "SDL3 not found, fetching it from source")
     include(FetchContent)
     set(SDL_SHARED OFF CACHE BOOL "" FORCE)
     set(SDL_STATIC ON CACHE BOOL "" FORCE)
     set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
     set(SDL_TESTS OFF CACHE BOOL "" FORCE)
     set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
-    set(SDL_INSTALL_TESTS OFF CACHE BOOL "" FORCE)
     set(SDL_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
     FetchContent_Declare(
         SDL3
@@ -77,77 +44,55 @@ if(NOT SDL3_FOUND)
     FetchContent_MakeAvailable(SDL3)
 endif()
 
-###############################################################################
-
-# NOTE: update executable name in .github/workflows/cmake.yml:25 when changing name here
-add_executable(${MAIN_EXECUTABLE_NAME}
-    main.cpp
-)
-target_sources(${MAIN_EXECUTABLE_NAME}
-    PRIVATE
-        src/app/GameEngine.cpp
-        src/app/Window.cpp
-        src/app/Framebuffer.cpp
-        src/game/Vector2.cpp
-        src/game/Size2D.cpp
-        src/game/RenderStyle.cpp
-        src/game/Map.cpp
-        src/game/Player.cpp
-        src/game/Raycaster.cpp
-        src/game/Texture.cpp
-        src/game/Tile.cpp
-        src/game/EmptyTile.cpp
-        src/game/SolidWallTile.cpp
-        src/game/TexturedWallTile.cpp
-        src/game/EmissiveWallTile.cpp
-        src/game/Sprite.cpp
-        src/game/SpriteRenderer.cpp
-        src/game/DoorTile.cpp
-        src/game/ThinWallTile.cpp
-        src/patterns/TileFactory.cpp
-        src/patterns/WallShadingStrategy.cpp
+# ---------------------------------------------------------------------------
+# Target
+# ---------------------------------------------------------------------------
+add_executable(backrooms
+    src/main.cpp
+    src/app/GameEngine.cpp
+    src/app/Window.cpp
+    src/app/Framebuffer.cpp
+    src/game/Vector2.cpp
+    src/game/Size2D.cpp
+    src/game/RenderStyle.cpp
+    src/game/Map.cpp
+    src/game/Player.cpp
+    src/game/Raycaster.cpp
+    src/game/Texture.cpp
+    src/game/Tile.cpp
+    src/game/EmptyTile.cpp
+    src/game/SolidWallTile.cpp
+    src/game/TexturedWallTile.cpp
+    src/game/EmissiveWallTile.cpp
+    src/game/Sprite.cpp
+    src/game/SpriteRenderer.cpp
+    src/game/DoorTile.cpp
+    src/game/ThinWallTile.cpp
+    src/patterns/TileFactory.cpp
+    src/patterns/WallShadingStrategy.cpp
 )
 
-# NOTE: Add all defined targets (e.g. executables, libraries, etc. )
-# NOTE: RUN_SANITIZERS is optional, if it's not present it will default to true
-set_compiler_flags(RUN_SANITIZERS ${USE_ASAN} TARGET_NAMES ${MAIN_EXECUTABLE_NAME})
-# set_compiler_flags(TARGET_NAMES ${MAIN_EXECUTABLE_NAME} ${FOO} ${BAR})
-# where ${FOO} and ${BAR} represent additional executables or libraries
-# you want to compile with the set compiler flags
+target_include_directories(backrooms PRIVATE src)
 
-###############################################################################
+if(MSVC)
+    target_compile_options(backrooms PRIVATE /W4 /permissive- /utf-8)
+else()
+    target_compile_options(backrooms PRIVATE -Wall -Wextra -pedantic)
+endif()
 
-# use SYSTEM so cppcheck and clang-tidy do not report warnings from these directories
-target_include_directories(${MAIN_EXECUTABLE_NAME} PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-)
-target_include_directories(${MAIN_EXECUTABLE_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/src
-)
-target_include_directories(${MAIN_EXECUTABLE_NAME} SYSTEM PRIVATE
-    ext
-)
-# target_include_directories(${MAIN_EXECUTABLE_NAME} SYSTEM PRIVATE ${<SomeLib>_SOURCE_DIR}/include)
-# target_link_directories(${MAIN_EXECUTABLE_NAME} PRIVATE ${<SomeLib>_BINARY_DIR}/lib)
-target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE SDL3::SDL3)
+if(USE_ASAN AND NOT MSVC)
+    target_compile_options(backrooms PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(backrooms PRIVATE -fsanitize=address,undefined)
+endif()
 
-# treat SDL3 headers as system to keep -Werror clean
+# Treat SDL3 headers as system headers so our -Wall/-Wextra stays clean.
 if(TARGET SDL3::SDL3)
     get_target_property(_sdl3_inc SDL3::SDL3 INTERFACE_INCLUDE_DIRECTORIES)
     if(_sdl3_inc)
-        target_include_directories(${MAIN_EXECUTABLE_NAME} SYSTEM PRIVATE ${_sdl3_inc})
+        target_include_directories(backrooms SYSTEM PRIVATE ${_sdl3_inc})
     endif()
 endif()
 
-###############################################################################
+target_link_libraries(backrooms PRIVATE SDL3::SDL3)
 
-# copy binaries to "bin" folder; these are uploaded as artifacts on each release
-# DESTINATION_DIR is set as "bin" in cmake/Options.cmake:6
-install(TARGETS ${MAIN_EXECUTABLE_NAME} DESTINATION ${DESTINATION_DIR})
-if(APPLE)
-    install(FILES launcher.command DESTINATION ${DESTINATION_DIR})
-endif()
-
-copy_files(FILES tastatura.txt DIRECTORY assets COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
-# copy_files(FILES tastatura.txt config.json DIRECTORY images sounds COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
-# copy_files(DIRECTORY images sounds COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
+install(TARGETS backrooms RUNTIME DESTINATION bin)
