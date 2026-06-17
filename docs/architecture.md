@@ -1,6 +1,6 @@
-# escape — technical documentation
+# backrooms — technical documentation
 
-A Wolfenstein-style raycaster written in C++23 on top of SDL3, built with CMake. The render loop draws into a software framebuffer that is then uploaded to a streaming SDL texture.
+A Wolfenstein-style raycaster written in C++23 on top of SDL3, built with CMake. The render loop draws into a software framebuffer that is then uploaded to a streaming SDL texture. (The C++ code lives in the `escape::` namespace, which predates the `backrooms` project name.)
 
 ## Module map
 
@@ -71,5 +71,5 @@ A Wolfenstein-style raycaster written in C++23 on top of SDL3, built with CMake.
 brew install sdl3
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build --parallel
-./build/oop
+./build/backrooms
 ```
